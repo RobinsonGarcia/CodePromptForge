@@ -62,7 +62,8 @@ def main():
         output_file=args.output_file,
         dry_run=args.dry_run,
         force=args.force,
-        include_tree=args.include_tree
+        include_tree=args.include_tree,
+        excluded=args.exclude
     )
 
     try:

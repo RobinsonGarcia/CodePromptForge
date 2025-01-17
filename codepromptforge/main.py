@@ -55,6 +55,7 @@ class CodePromptForge:
         self.force = force
         self.include_tree = include_tree
         self.excluded = [self.base_dir / Path(x) for x in (excluded or [])]
+        print(self.excluded)
 
     def _validate_base_directory(self) -> None:
         """
