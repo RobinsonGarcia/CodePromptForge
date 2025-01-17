@@ -1,8 +1,8 @@
-# promptforge/cli.py
+# codepromptforge/cli.py
 
 import argparse
-from promptforge.main import (
-    PromptForge,
+from codepromptforge.main import (
+    CodePromptForge,
     InvalidBaseDirectoryError,
     NoFilesFoundError,
     OutputFileAlreadyExistsError,
@@ -11,10 +11,12 @@ from promptforge.main import (
 
 def main():
     """
-    Entry point for the command-line interface of PromptForge.
+    Entry point for the command-line interface of Code Prompt Forge.
     Parses arguments and executes the file-combining functionality.
     """
-    parser = argparse.ArgumentParser(description="Combine code files into a single prompt for use with LLMs.")
+    parser = argparse.ArgumentParser(
+        description="Combine code files into a single prompt for use with LLMs."
+    )
     parser.add_argument(
         "extensions",
         nargs="+",
@@ -48,7 +50,7 @@ def main():
 
     args = parser.parse_args()
 
-    forge = PromptForge(
+    forge = CodePromptForge(
         base_dir=args.base_dir,
         output_file=args.output_file,
         dry_run=args.dry_run,

@@ -5,7 +5,7 @@ import tempfile
 import shutil
 from pathlib import Path
 
-from promptforge.main import (
+from code_prompt_forge.main import (
     PromptForge,
     InvalidBaseDirectoryError,
     NoFilesFoundError,

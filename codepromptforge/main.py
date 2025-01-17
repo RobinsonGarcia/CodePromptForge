@@ -1,22 +1,26 @@
-# promptforge/main.py
+# codepromptforge/main.py
 
 import os
 from pathlib import Path
 from typing import List, Optional
 
+
 class InvalidBaseDirectoryError(Exception):
     """Raised when the specified base directory is invalid or does not exist."""
     pass
+
 
 class NoFilesFoundError(Exception):
     """Raised when no files are found matching the specified extensions."""
     pass
 
+
 class OutputFileAlreadyExistsError(Exception):
     """Raised when the output file already exists and 'force' is not enabled."""
     pass
 
-class PromptForge:
+
+class CodePromptForge:
     """
     A class to consolidate files from a base directory into a single prompt,
     making it easier to use with large language models (LLMs) for code review,
@@ -39,7 +43,7 @@ class PromptForge:
         include_tree: bool = False
     ):
         """
-        Initialize a new PromptForge instance.
+        Initialize a new CodePromptForge instance.
 
         Args:
             base_dir (str): The directory to search for files.
@@ -57,7 +61,7 @@ class PromptForge:
     def _validate_base_directory(self) -> None:
         """
         Validate that the base directory is a directory.
-        
+
         Raises:
             InvalidBaseDirectoryError: If self.base_dir is not a valid directory.
         """
@@ -69,7 +73,7 @@ class PromptForge:
     def _validate_output_file(self) -> None:
         """
         Check if the output file already exists and handle overwrite if 'force' is disabled.
-        
+
         Raises:
             OutputFileAlreadyExistsError: If the file exists and self.force is False.
         """
@@ -110,7 +114,7 @@ class PromptForge:
         Recursively generate a text-based tree structure of the directories.
 
         Args:
-            path (Optional[Path], optional): The starting path for generating the tree. 
+            path (Optional[Path], optional): The starting path for generating the tree.
                                              Defaults to None, which means self.base_dir.
             prefix (str, optional): The current prefix for tree branches. Defaults to "".
 
