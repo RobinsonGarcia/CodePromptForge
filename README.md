@@ -1,6 +1,6 @@
-# Code-Prompt-Forge
+# codepromptforge
 
-**Code-Prompt-Forge** is a Python tool that merges the contents of multiple code (or text) files into one consolidated prompt. This prompt can then be used by Large Language Models (LLMs) to assist in tasks like bug fixing, code improvements, and other automated coding workflows.
+**codepromptforge** is a Python tool that merges the contents of multiple code (or text) files into one consolidated prompt. This prompt can then be used by Large Language Models (LLMs) to assist in tasks like bug fixing, code improvements, and other automated coding workflows.
 
 ---
 
@@ -24,7 +24,7 @@
 
 ## Overview
 
-**Code-Prompt-Forge** comes in two parts:
+**codepromptforge** comes in two parts:
 1. A **command-line interface (CLI)** that quickly and easily merges files based on specified extensions.
 2. A **Python class** (`PromptForge`) providing programmatic control to locate files, optionally include a directory tree, and write them into a single output file.
 
@@ -46,7 +46,7 @@
    ```bash
    pip install .
    ```
-4. After installation, you can run Code-Prompt-Forge directly from the command line if you configure your `setup.py` to expose a script (for example, `code-prompt-forge`). Alternatively, you can import and use the `PromptForge` class in Python scripts.
+4. After installation, you can run codepromptforge directly from the command line if you configure your `setup.py` to expose a script (for example, `codepromptforge`). Alternatively, you can import and use the `PromptForge` class in Python scripts.
 
 ---
 
@@ -54,26 +54,26 @@
 
 ### Command Line Usage
 
-Assuming you have configured your `setup.py` to create a console script named `code-prompt-forge`:
+Assuming you have configured your `setup.py` to create a console script named `codepromptforge`:
 
 ```bash
-code-prompt-forge <extensions> [OPTIONS]
+codepromptforge <extensions> [OPTIONS]
 ```
 
 For example:
 
 ```bash
-code-prompt-forge py txt --base-dir="./codebase" --output-file="./prompts/merged_prompt.txt"
+codepromptforge py txt --base-dir="./codebase" --output-file="./prompts/merged_prompt.txt"
 ```
 
 This looks for `.py` and `.txt` files in `./codebase`, then writes them into `./prompts/merged_prompt.txt`.
 
 ### Python API Usage
 
-You can also invoke **Code-Prompt-Forge**’s functionality programmatically:
+You can also invoke **codepromptforge**’s functionality programmatically:
 
 ```python
-from promptforge.main import PromptForge  # or "from code_prompt_forge.main import PromptForge" if you rename your folder
+from codepromptforge.main import PromptForge
 
 def combine_files():
     forge = PromptForge(
@@ -112,28 +112,28 @@ When you call `forge.run(["py", "txt"])`, it searches for `.py` and `.txt` files
 ### Basic Usage
 
 ```bash
-code-prompt-forge py
+codepromptforge py
 ```
 - Searches `./codebase` (by default) for `.py` files, merging them into `./prompts/merged_prompt.txt`.
 
 ### Changing the Base Directory
 
 ```bash
-code-prompt-forge md --base-dir="./docs" --output-file="./prompts/combined_docs.txt"
+codepromptforge md --base-dir="./docs" --output-file="./prompts/combined_docs.txt"
 ```
 - Locates all `.md` files in `./docs`, writing them into `./prompts/combined_docs.txt`.
 
 ### Including a Directory Tree
 
 ```bash
-code-prompt-forge py txt --include-tree
+codepromptforge py txt --include-tree
 ```
 - Merges `.py` and `.txt` files from `./codebase` into `./prompts/merged_prompt.txt` and prepends a directory tree view at the top of the output.
 
 ### Dry Run
 
 ```bash
-code-prompt-forge py --dry-run
+codepromptforge py --dry-run
 ```
 - Lists all `.py` files in `./codebase` without creating or overwriting the output file.
 
@@ -142,15 +142,15 @@ code-prompt-forge py --dry-run
 ## Code Structure
 
 ```
-code_prompt_forge/
+codepromptforge/
 ├── __init__.py   # Package initializer
 ├── cli.py        # Command-line interface
 ├── main.py       # Core logic, including PromptForge class
 tests/
-├── test_code_prompt_forge.py  # Unit tests (requires pytest or similar)
+├── test_codepromptforge.py  # Unit tests (requires pytest or similar)
 ```
 
-- **`__init__.py`**: Makes `code_prompt_forge` a Python package.  
+- **`__init__.py`**: Makes `codepromptforge` a Python package.  
 - **`cli.py`**: Defines the CLI entry point using Python’s `argparse`.  
 - **`main.py`**: Contains the `PromptForge` class to find and merge files.  
 - **`tests/`**: Holds tests verifying functionality of the package.
@@ -169,6 +169,6 @@ Contributions of any kind are welcome! Submit issues or pull requests to enhance
 
 ## License
 
-This project is distributed under the [MIT License](https://opensource.org/licenses/MIT). You’re free to use, modify, and distribute **Code-Prompt-Forge** under these terms. If you find it helpful, consider giving a shout-out or contributing back to the repository.
+This project is distributed under the [MIT License](https://opensource.org/licenses/MIT). You’re free to use, modify, and distribute **codepromptforge** under these terms. If you find it helpful, consider giving a shout-out or contributing back to the repository.
 
-Enjoy **Code-Prompt-Forge** and happy coding!
+Enjoy **codepromptforge** and happy coding!

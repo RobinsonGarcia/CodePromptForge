@@ -1,24 +1,18 @@
-# codepromptforge/main.py
-
 import os
 from pathlib import Path
 from typing import List, Optional
-
 
 class InvalidBaseDirectoryError(Exception):
     """Raised when the specified base directory is invalid or does not exist."""
     pass
 
-
 class NoFilesFoundError(Exception):
     """Raised when no files are found matching the specified extensions."""
     pass
 
-
 class OutputFileAlreadyExistsError(Exception):
     """Raised when the output file already exists and 'force' is not enabled."""
     pass
-
 
 class CodePromptForge:
     """
@@ -32,6 +26,7 @@ class CodePromptForge:
         dry_run (bool): If True, just list files without writing output.
         force (bool): If True, overwrite existing output files without prompting.
         include_tree (bool): If True, append a directory tree to the combined output.
+        excluded (List[Path]): A list of paths to exclude from the search.
     """
 
     def __init__(
@@ -40,7 +35,8 @@ class CodePromptForge:
         output_file: str,
         dry_run: bool = False,
         force: bool = False,
-        include_tree: bool = False
+        include_tree: bool = False,
+        excluded: Optional[List[str]] = None
     ):
         """
         Initialize a new CodePromptForge instance.
@@ -51,12 +47,14 @@ class CodePromptForge:
             dry_run (bool, optional): If True, just list files. Defaults to False.
             force (bool, optional): If True, overwrite existing output. Defaults to False.
             include_tree (bool, optional): If True, include directory tree in output. Defaults to False.
+            excluded (List[str], optional): List of file or directory patterns to exclude. Defaults to None.
         """
         self.base_dir = Path(base_dir)
         self.output_file = Path(output_file)
         self.dry_run = dry_run
         self.force = force
         self.include_tree = include_tree
+        self.excluded = [self.base_dir / Path(x) for x in (excluded or [])]
 
     def _validate_base_directory(self) -> None:
         """
@@ -67,7 +65,8 @@ class CodePromptForge:
         """
         if not self.base_dir.is_dir():
             raise InvalidBaseDirectoryError(
-                f"Base directory '{self.base_dir}' does not exist or is not a directory."
+                f"Base directory '{self.base_dir}' does not exist or is not a directory. "
+                "Use --help for more information."
             )
 
     def _validate_output_file(self) -> None:
@@ -79,12 +78,14 @@ class CodePromptForge:
         """
         if self.output_file.exists() and not self.force and not self.dry_run:
             raise OutputFileAlreadyExistsError(
-                f"Output file '{self.output_file}' already exists. Use --force to overwrite."
+                f"Output file '{self.output_file}' already exists. Use --force to overwrite. "
+                "For example: codepromptforge py --force"
             )
 
     def find_files(self, extensions: List[str]) -> List[Path]:
         """
-        Locate all files within base_dir that match the given extensions.
+        Locate all files within base_dir that match the given extensions,
+        excluding any that match the specified exclusion patterns.
 
         Args:
             extensions (List[str]): The file extensions to search for (without dots).
@@ -98,14 +99,25 @@ class CodePromptForge:
         """
         self._validate_base_directory()
 
+        # Filter out files that are directly in or under any excluded path
+        def is_excluded(file_path: Path) -> bool:
+            for excluded_path in self.excluded:
+                # If file_path is excluded or a child of an excluded directory
+                if file_path == excluded_path or excluded_path in file_path.parents:
+                    return True
+            return False
+
         matched_files = []
         for ext in extensions:
-            matched_files.extend(self.base_dir.rglob(f"*.{ext}"))
+            for file_path in self.base_dir.rglob(f"*.{ext}"):
+                if not is_excluded(file_path):
+                    matched_files.append(file_path)
 
         matched_files = sorted(set(matched_files))
         if not matched_files:
             raise NoFilesFoundError(
-                f"No files found for extensions {extensions} in '{self.base_dir}'."
+                f"No files found for extensions {extensions} in '{self.base_dir}' after applying exclusions. "
+                "Try removing --exclude or adjusting your patterns."
             )
         return matched_files
 

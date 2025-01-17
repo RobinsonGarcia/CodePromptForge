@@ -1,12 +1,12 @@
-# tests/test_promptforge.py
+# tests/test_CodePromptForge.py
 
 import pytest
 import tempfile
 import shutil
 from pathlib import Path
 
-from code_prompt_forge.main import (
-    PromptForge,
+from codepromptforge.main import (
+    CodePromptForge,
     InvalidBaseDirectoryError,
     NoFilesFoundError,
     OutputFileAlreadyExistsError
@@ -17,7 +17,7 @@ def test_invalid_base_directory():
     Ensure that an InvalidBaseDirectoryError is raised if the base directory does not exist.
     """
     with pytest.raises(InvalidBaseDirectoryError):
-        forge = PromptForge(base_dir="non_existent_dir", output_file="output.txt")
+        forge = CodePromptForge(base_dir="non_existent_dir", output_file="output.txt")
         forge.run(["py"])
 
 def test_no_files_found(tmp_path):
@@ -27,7 +27,7 @@ def test_no_files_found(tmp_path):
     # tmp_path is automatically cleaned up by pytest
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
-    forge = PromptForge(base_dir=str(empty_dir), output_file=str(tmp_path / "merged.txt"))
+    forge = CodePromptForge(base_dir=str(empty_dir), output_file=str(tmp_path / "merged.txt"))
 
     with pytest.raises(NoFilesFoundError):
         forge.run(["py"])
@@ -43,7 +43,7 @@ def test_forge_prompt_dry_run(tmp_path):
     py_file.write_text("# sample python file")
 
     output_file = tmp_path / "merged.txt"
-    forge = PromptForge(
+    forge = CodePromptForge(
         base_dir=str(code_dir),
         output_file=str(output_file),
         dry_run=True
@@ -66,8 +66,8 @@ def test_forge_prompt_force_overwrite(tmp_path):
     output_file = tmp_path / "merged.txt"
     output_file.write_text("Existing content")
 
-    # Instantiate PromptForge with force=False first to ensure it raises an error
-    forge_no_force = PromptForge(
+    # Instantiate CodePromptForge with force=False first to ensure it raises an error
+    forge_no_force = CodePromptForge(
         base_dir=str(code_dir),
         output_file=str(output_file),
         force=False
@@ -76,7 +76,7 @@ def test_forge_prompt_force_overwrite(tmp_path):
         forge_no_force.run(["py"])
 
     # Now run again with force=True; it should overwrite without error
-    forge_force = PromptForge(
+    forge_force = CodePromptForge(
         base_dir=str(code_dir),
         output_file=str(output_file),
         force=True
@@ -102,7 +102,7 @@ def test_include_tree(tmp_path):
     file_main.write_text("# main python file")
 
     output_file = tmp_path / "merged_tree.txt"
-    forge = PromptForge(
+    forge = CodePromptForge(
         base_dir=str(code_dir),
         output_file=str(output_file),
         include_tree=True,
@@ -116,3 +116,31 @@ def test_include_tree(tmp_path):
     assert "subfolder" in merged_content
     assert "sample python file in subfolder" in merged_content
     assert "main python file" in merged_content
+
+
+def test_exclude_dirs_and_files(tmp_path):
+    """
+    Ensure that excluded files and directories are not included in the prompt.
+    """
+    # Setup a test directory structure
+    code_dir = tmp_path / "codebase"
+    code_dir.mkdir()
+    include_file = code_dir / "include.py"
+    exclude_file = code_dir / "exclude.py"
+    exclude_dir = code_dir / "exclude_dir"
+    exclude_dir.mkdir()
+    exclude_dir_file = exclude_dir / "nested.py"
+    include_file.write_text("print('include')")
+    exclude_file.write_text("print('exclude')")
+    exclude_dir_file.write_text("print('nested')")
+
+    forge = CodePromptForge(
+        base_dir=str(code_dir),
+        output_file=str(tmp_path / "merged.txt"),
+        excluded=[str(exclude_file), str(exclude_dir)]
+    )
+    files = forge.find_files(["py"])
+
+    # Check that only include.py is listed
+    assert len(files) == 1
+    assert files[0].name == "include.py"

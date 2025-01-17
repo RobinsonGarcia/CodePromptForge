@@ -11,7 +11,7 @@ from codepromptforge.main import (
 
 def main():
     """
-    Entry point for the command-line interface of Code Prompt Forge.
+    Entry point for the command-line interface of codepromptforge.
     Parses arguments and executes the file-combining functionality.
     """
     parser = argparse.ArgumentParser(
@@ -46,6 +46,13 @@ def main():
         "--include-tree",
         action="store_true",
         help="Include a directory tree listing in the combined output."
+    )
+
+    parser.add_argument(
+        "--exclude",
+        nargs="*",
+        default=[],
+        help="List of directories or files to exclude from the search."
     )
 
     args = parser.parse_args()
