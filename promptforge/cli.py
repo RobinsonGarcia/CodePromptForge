@@ -1,5 +1,13 @@
+# promptforge/cli.py
+
 import argparse
-from promptforge.main import PromptForge, NoFilesFoundError, InvalidBaseDirectoryError, FileAlreadyExistsError
+from promptforge.main import (
+    PromptForge,
+    InvalidBaseDirectoryError,
+    NoFilesFoundError,
+    OutputFileAlreadyExistsError,
+)
+
 
 def main():
     """
@@ -25,12 +33,17 @@ def main():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="If set, only preview the files that would be combined without writing to the output file."
+        help="List the files that would be combined without writing to the output."
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="If set, overwrite existing output files without confirmation."
+        help="Overwrite the existing output file without prompting."
+    )
+    parser.add_argument(
+        "--include-tree",
+        action="store_true",
+        help="Include a directory tree listing in the combined output."
     )
 
     args = parser.parse_args()
@@ -39,21 +52,22 @@ def main():
         base_dir=args.base_dir,
         output_file=args.output_file,
         dry_run=args.dry_run,
-        force=args.force
+        force=args.force,
+        include_tree=args.include_tree
     )
 
     try:
         forge.run(args.extensions)
-        if not args.dry_run:
-            print(f"Prompt created at {args.output_file}")
+        if args.dry_run:
+            print("Dry run complete. No files were written.")
         else:
-            print("Dry run completed. No files were written.")
-    except NoFilesFoundError as e:
-        print(e)
+            print(f"Prompt created at {args.output_file}")
     except InvalidBaseDirectoryError as e:
-        print(e)
-    except FileAlreadyExistsError as e:
-        print(e)
+        print(f"Error: {e}")
+    except NoFilesFoundError as e:
+        print(f"Error: {e}")
+    except OutputFileAlreadyExistsError as e:
+        print(f"Error: {e}")
     except ValueError as e:
         # Fallback for any other ValueError not covered above
         print(f"An unexpected error occurred: {e}")

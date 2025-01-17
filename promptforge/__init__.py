@@ -1,3 +1,4 @@
+# promptforge/__init__.py
 """
 PromptForge package initialization module.
 

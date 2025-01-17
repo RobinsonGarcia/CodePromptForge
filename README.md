@@ -1,145 +1,154 @@
 # PromptForge
 
-PromptForge is a Python package designed to seamlessly combine code files into a single prompt. This consolidated prompt can then be used with Large Language Models (LLMs) to facilitate bug fixing, code improvements, and general code reviews. By gathering multiple files in one place, PromptForge streamlines your workflow for AI-assisted analysis.
+PromptForge is a simple Python tool that merges the contents of multiple code (or text) files into one consolidated prompt. This consolidated prompt can then be fed into a Large Language Model (LLM) to assist in tasks like bug fixing, code improvements, and other automated coding workflows.
 
 ---
 
 ## Table of Contents
-
-1. [Features](#features)  
+1. [Overview](#overview)  
 2. [Installation](#installation)  
 3. [Usage](#usage)  
-   - [Command Line](#command-line-usage)  
-   - [Python API](#python-api-usage)  
-4. [Command-Line Arguments](#command-line-arguments)  
-5. [Examples](#examples)  
-6. [Contributing](#contributing)  
-7. [License](#license)
+4. [Command Line Arguments](#command-line-arguments)  
+5. [Example Workflow](#example-workflow)  
+6. [Code Structure](#code-structure)  
+7. [Contributing](#contributing)  
+8. [License](#license)
 
 ---
 
-## Features
+## Overview
 
-- **Combine multiple files**: Merge the contents of numerous files matching specified extensions into a single prompt.
-- **Customizable base directory**: Easily specify which directory to scan for files.
-- **Optional dry run**: Preview the files that would be merged, without actually writing any content to the output file.
-- **Force overwrite**: Overwrite existing prompt files safely, or choose to abort if the file already exists.
-- **Chunk-based reading**: Efficiently handle large files by reading in chunks.
-- **Extensible code base**: Written in a highly modular way, making it straightforward to add or modify functionality.
+PromptForge is built around two main components:
+1. A **command-line interface (CLI)** that allows you to quickly specify a base directory, file extensions, and an output file.
+2. A **Python class** (`PromptForge`) that encapsulates the logic of finding files and merging their contents.
+
+### Key Features
+
+- **Search by Extensions**: Recursively searches the specified base directory for files matching given extensions (e.g., `.py`, `.txt`, `.md`).  
+- **Consolidation into One File**: Appends all matching file contents into a single file, making it easier to review code or feed it to an LLM.  
+- **Customizable Output Paths**: Specify where the merged file should be generated.  
+- **Simple and Lightweight**: Minimal dependencies, easy to integrate into your existing projects.
 
 ---
 
 ## Installation
 
-To install PromptForge, clone or download the repository and navigate to the project’s root directory (the one containing `setup.py`). Then, run the following command:
+1. **Clone or Download** this repository.  
+2. In your terminal, navigate to the project’s root directory (the one containing `setup.py`, if you create one for distribution).
+3. **Install the package locally**:
+   ```bash
+   pip install .
+   ```
+4. After a successful install, you can run PromptForge directly from the command line using the `promptforge` command. Alternatively, you can import and use the `PromptForge` class in Python scripts.
 
-```bash
-pip install .
-```
-
-This will install PromptForge and its command-line interface (promptforge) into your Python environment.
+---
 
 ## Usage
 
 ### Command Line Usage
-	1.	Basic command:
 
-    ```bash
-    promptforge py txt
-    ```
-    This command searches the ./codebase directory (default) for .py and .txt files, then merges them into ./prompts/merged_prompt.txt (the default output file).
+```bash
+promptforge py txt
+```
 
-	2.	Using additional flags:
-	•	--dry-run: Lists which files would be merged, without creating or overwriting the output file.
-	•	--force: Overwrites the existing output file without raising an error if the file already exists.
+- This example scans `./codebase` (default) for `.py` and `.txt` files and merges their contents into `./prompts/merged_prompt.txt` by default.
 
-    ```bash
-    promptforge py txt --dry-run --force
-    ``` 
-    In this example, PromptForge will preview the files it would merge. If --dry-run is removed, it will overwrite ./prompts/merged_prompt.txt automatically because --force is specified.
+#### Changing the Base Directory and Output File
+
+```bash
+promptforge md --base-dir="./docs" --output-file="./prompts/docs_combined.txt"
+```
+
+- Here, only `.md` files under `./docs` are merged into `./prompts/docs_combined.txt`.
+
+### Python API Usage
+
+```python
+from promptforge.main import PromptForge
+
+def combine_files():
+    # Create a PromptForge instance
+    forge = PromptForge(
+        base_dir="./codebase",
+        output_file="./prompts/merged_prompt.txt"
+    )
+
+    # Find .py and .txt files and merge them
+    forge.run(["py", "txt"])
+    print("Files have been merged successfully!")
+
+if __name__ == "__main__":
+    combine_files()
+```
+
+By invoking `forge.run(["py", "txt"])`, the contents of all `.py` and `.txt` files in `./codebase` will be saved into `./prompts/merged_prompt.txt`.
+
+---
 
 ## Command Line Arguments
 
-| Argument         | Required? | Default                       | Description                                                                                 |
-|------------------|----------|-------------------------------|---------------------------------------------------------------------------------------------|
-| `extensions`     | Yes      | None                          | File extensions to search for, without dots. Multiple extensions can be specified.          |
-| `--base-dir`     | No       | `./codebase`                  | Base directory to search for files.                                                         |
-| `--output-file`  | No       | `./prompts/merged_prompt.txt` | File path where merged content will be written.                                             |
-| `--dry-run`      | No       | `False`                       | Lists the files that would be merged without writing anything.                              |
-| `--force`        | No       | `False`                       | Overwrites the output file if it already exists.                                            |
-    
+| Argument         | Required? | Default                        | Description                                                                     |
+|------------------|----------|--------------------------------|---------------------------------------------------------------------------------|
+| `extensions`     | Yes       | None                           | File extensions to search for, without dots. Multiple can be specified.         |
+| `--base-dir`     | No        | `./codebase`                   | Base directory to scan for files.                                               |
+| `--output-file`  | No        | `./prompts/merged_prompt.txt`  | Path to the merged output file.                                                 |
 
-## Examples
+**Example:**
 
-1.	Default invocation:
-
-    ```bash
-    promptforge py md
-    ```
-    
-    Searches ./codebase for all .py and .md files, merging them into ./prompts/merged_prompt.txt.
-
-    
-2.	Overwriting an existing file:
-    
-    ```bash
-    promptforge md --base-dir="./docs" --output-file="./prompts/docs_merged.txt" --force
-    ```
-    
-    Looks for .md files in ./docs, writes them to ./prompts/docs_merged.txt, overwriting the output file if it already exists.
-
-3.	Dry run:
-    ```bash
-    promptforge py --dry-run
-    ```
-    Displays which .py files would be merged without actually creating or overwriting the merged prompt file.
-
-## Python API Usage
-
-You can also use PromptForge as a library in your Python code:
-
-```python
-from promptforge.main import PromptForge, NoFilesFoundError, InvalidBaseDirectoryError
-
-def combine_code_files():
-    try:
-        # Create an instance of PromptForge
-        forge = PromptForge(
-            base_dir="./codebase",
-            output_file="./prompts/merged_prompt.txt",
-            dry_run=False,
-            force=False
-        )
-
-        # Run with desired file extensions
-        forge.run(["py", "txt"])
-        print("Files combined successfully!")
-    except NoFilesFoundError:
-        print("No matching files found.")
-    except InvalidBaseDirectoryError as e:
-        print(f"Invalid directory: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
-if __name__ == "__main__":
-    combine_code_files()
+```bash
+promptforge txt py --base-dir="my_project" --output-file="all_code_prompt.txt"
 ```
 
-By instantiating the PromptForge class and calling run with the list of file extensions you’d like to combine, the merged file is created (unless dry_run=True, in which case the operation only logs which files would be processed).
+---
+
+## Example Workflow
+
+1. **Add or Update Code**  
+   Work on your codebase as you normally do.
+2. **Generate Prompt**  
+   Run `promptforge` to merge all new or updated files into a single prompt:
+   ```bash
+   promptforge py md
+   ```
+3. **Use Prompt in an LLM**  
+   Copy the combined file content into your LLM or feed it programmatically to your AI tools for bug detection, code refactoring, or other tasks.
+4. **Iterate**  
+   Refine your code, generate a new prompt, repeat as needed.
+
+---
+
+## Code Structure
+
+Below is a simplified overview of the project layout:
+
+```
+promptforge/
+├── __init__.py
+├── cli.py
+├── main.py
+tests/
+├── test_promptforge.py
+```
+
+- **`__init__.py`**: Makes this directory a Python package.  
+- **`cli.py`**: Defines the command-line entry point using Python’s `argparse`.  
+- **`main.py`**: Contains the `PromptForge` class with methods to find and consolidate files.  
+- **`tests/`**: Contains tests verifying the core functionality (requires `pytest` or similar).
+
+---
 
 ## Contributing
 
-We welcome contributions of all kinds—bug reports, feature requests, and pull requests. Feel free to open an issue or fork the repository and submit a pull request with any changes you’d like to see.
+Contributions are welcome! Feel free to submit issues or pull requests. Before creating a PR, make sure you:
 
-Before submitting a pull request:
-	1.	Ensure your code follows Python’s PEP 8 style guidelines.
-	2.	Add tests for any new features or bug fixes.
-	3.	Update the documentation (including this README) when adding new functionality.
+1. Use Python’s [PEP 8](https://peps.python.org/pep-0008/) style conventions.  
+2. Write or update tests relevant to your changes.  
+3. Update documentation (including this README) if your changes add or modify functionality.
 
-
+---
 
 ## License
 
-PromptForge is released under the MIT License. You’re free to use, modify, and distribute this software as permitted by the license.
+This project is distributed under the [MIT License](https://opensource.org/licenses/MIT). Feel free to use, modify, and distribute this tool as permitted by the license. If you find this helpful, we’d appreciate a shout-out or a contribution back to the project.
 
-Enjoy PromptForge, and happy coding!
+Enjoy PromptForge and happy coding!
