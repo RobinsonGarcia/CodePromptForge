@@ -1,15 +1,15 @@
 from setuptools import setup, find_packages
 
-# Function to read requirements.txt
-def read_requirements():
-    with open("requirements.txt", "r", encoding="utf-8") as f:
-        return [line.strip() for line in f if line.strip() and not line.startswith("#")]
-
 setup(
     name="codepromptforge",             
     version="1.0.1",                
     packages=find_packages(),
-    install_requires=read_requirements(),  # ✅ Read dependencies from requirements.txt
+    install_requires=[
+        "pytest",
+        "pydantic",
+        "langchain",
+        "pathspec",
+    ],  # ✅ Dependencies included directly
     entry_points={
         "console_scripts": [
             "codepromptforge=codepromptforge.cli:main"
