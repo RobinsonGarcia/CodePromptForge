@@ -9,6 +9,27 @@ The **CodePromptForge ToolKit** provides a set of **LangChain-compatible tools**
 - **Code Modification**: Write and update files programmatically.
 - **Cleanup and Maintenance**: Remove unnecessary files from results folders.
 - **Seamless Integration**: Designed to work with **LangChain's** agent framework.
+- **Optional Assistant Module**: Allows users to create and register AI assistants.
+
+---
+
+## **Installation**
+
+### **Core Installation**
+To install the core functionality of CodePromptForge:
+```bash
+pip install codepromptforge
+```
+
+### **Installing with Assistant Module**
+To use the **AI Assistant framework**, install the package with the `assistant` extra:
+```bash
+pip install codepromptforge[assistant]
+```
+
+This includes dependencies such as:
+- `langchain_ollama`
+- `langgraph`
 
 ---
 
@@ -191,6 +212,51 @@ agent.run("List all Python files in the project and summarize their content.")
 2. It will filter files using `find_files(["py"])` to locate Python scripts.
 3. It will use `get_file_content()` to analyze each file.
 4. Based on the retrieved content, it will generate a **summary**.
+
+---
+
+## **Using the Assistant Module**
+If installed with `[assistant]`, you can leverage AI assistants to process and generate code.
+
+### **Example Usage**
+```python
+from codepromptforge.assistant import AssistantRegistry
+
+# List available assistants
+print(AssistantRegistry.list_assistants())  
+# Expected output: ['react_assistant']
+
+from langchain_ollama import ChatOllama
+
+# Initialize an LLM
+llm = ChatOllama(
+    model="qwen2.5:14b",
+    temperature=0,
+    num_ctx=80000,
+    num_gpu=1,
+)
+
+# Retrieve and use the assistant
+agent = AssistantRegistry.get_assistant('react_assistant', llm)
+
+def print_stream(stream):
+    for s in stream:
+        message = s["messages"][-1]
+        if isinstance(message, tuple):
+            print(message)
+        else:
+            message.pretty_print()
+
+# Provide a query for the assistant
+inputs = {
+    "messages": [("user", "This is my package named CodePromptForge. Your job is to describe what needs to be modified to improve the current code")]
+}
+
+print_stream(agent.stream(inputs, stream_mode="values"))
+```
+
+### **Expected Output**
+The assistant will analyze the package and suggest improvements based on best practices.
 
 ---
 

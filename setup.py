@@ -2,14 +2,22 @@ from setuptools import setup, find_packages
 
 setup(
     name="codepromptforge",             
-    version="0.0.1",                
+    version="0.0.2",                
     packages=find_packages(),
     install_requires=[
         "pytest",
         "pydantic",
         "langchain",
         "pathspec",
-    ],  # ✅ Dependencies included directly
+    ],  # ✅ Core dependencies
+
+    extras_require={  
+        "assistant": [  
+            "langchain_ollama",  # ✅ Dependencies required for the assistant module
+            "langgraph",
+        ],
+    },  
+
     entry_points={
         "console_scripts": [
             "codepromptforge=codepromptforge.cli:main"
