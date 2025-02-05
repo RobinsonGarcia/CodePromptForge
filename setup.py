@@ -7,7 +7,7 @@ def read_requirements():
 
 setup(
     name="codepromptforge",             
-    version="1.0.0",                
+    version="1.0.1",                
     packages=find_packages(),
     install_requires=read_requirements(),  # ✅ Read dependencies from requirements.txt
     entry_points={
