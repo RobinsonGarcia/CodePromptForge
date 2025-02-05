@@ -17,7 +17,7 @@ class OutputFileAlreadyExistsError(Exception):
 class CodePromptForge:
     def __init__(
         self,
-        base_dir: str,
+        base_dir: str = ".",
         output_file: str = None,
         dry_run: bool = False,
         force: bool = False,

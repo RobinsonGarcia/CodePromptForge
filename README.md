@@ -1,141 +1,146 @@
-# codepromptforge
+# CodePromptForge
 
-**codepromptforge** is a Python tool that merges the contents of multiple code (or text) files into one consolidated prompt. This prompt can then be used by Large Language Models (LLMs) to assist in tasks like bug fixing, code improvements, and other automated coding workflows.
+**CodePromptForge** is a Python tool designed to streamline code reviews and development workflows by merging code files into a single prompt. This consolidated prompt can then be used by Large Language Models (LLMs) for bug fixing, code improvements, and other automated coding tasks.
 
 ---
 
 ## Table of Contents
-1. [Overview](#overview)  
-2. [Installation](#installation)  
-3. [Usage](#usage)  
-   - [Command Line](#command-line-usage)  
-   - [Python API](#python-api-usage)  
-4. [Command Line Arguments](#command-line-arguments)  
-5. [Examples](#examples)  
-   - [Basic Usage](#basic-usage)  
-   - [Changing the Base Directory](#changing-the-base-directory)  
-   - [Including a Directory Tree](#including-a-directory-tree)  
-   - [Dry Run](#dry-run)  
-6. [Code Structure](#code-structure)  
-7. [Contributing](#contributing)  
+1. [Overview](#overview)
+2. [Installation](#installation)
+3. [Usage](#usage)
+   - [Command Line Interface (CLI)](#command-line-interface-cli)
+   - [Python API](#python-api)
+4. [Command Reference](#command-reference)
+5. [Examples](#examples)
+6. [Code Structure](#code-structure)
+7. [Contributing](#contributing)
 8. [License](#license)
 
 ---
 
 ## Overview
 
-**codepromptforge** comes in two parts:
-1. A **command-line interface (CLI)** that quickly and easily merges files based on specified extensions.
-2. A **Python class** (`PromptForge`) providing programmatic control to locate files, optionally include a directory tree, and write them into a single output file.
-
 ### Key Features
-
-- **Search by Extensions**: Recursively scans a base directory for files matching given extensions (e.g., `.py`, `.txt`, `.md`).  
-- **Single Output**: Consolidates matched file contents into a single text file, streamlining code reviews or preparing context for an LLM.  
-- **Customizable Output Paths**: Specify where the merged file should be placed.  
-- **Optional Directory Tree**: Include a text-based directory tree at the top of your output for extra context.  
-- **Simple, Lightweight**: Minimal dependencies and straightforward usage.
+- **Find and Merge Files**: Recursively scans a base directory for files matching specified extensions.
+- **Single Prompt Output**: Consolidates multiple code files into a single text file.
+- **Configurable Output**: Customize output paths and exclusions.
+- **Directory Tree Inclusion**: Optionally include a directory structure overview at the top of the output.
+- **Lightweight and Easy to Use**: Simple CLI commands and a Python API for seamless integration.
 
 ---
 
 ## Installation
 
-1. **Clone or Download** this repository.  
-2. Navigate to the root directory (containing the `setup.py` file) in your terminal.  
-3. **Install the package**:
-   ```bash
-   pip install codepromptforge
-   ```
-4. After installation, you can run codepromptforge directly from the command line if you configure your `setup.py` to expose a script (for example, `codepromptforge`). Alternatively, you can import and use the `PromptForge` class in Python scripts.
+To install **CodePromptForge**, run:
+
+```bash
+pip install codepromptforge
+```
+
+To install from source:
+
+```bash
+git clone https://github.com/RobinsonGarcia/CodePromptForge.git
+cd CodePromptForge
+pip install .
+```
 
 ---
 
 ## Usage
 
-### Command Line Usage
-
-Assuming you have configured your `setup.py` to create a console script named `codepromptforge`:
-
-```bash
-codepromptforge <extensions> [OPTIONS]
-```
-
-For example:
+### Command Line Interface (CLI)
+After installation, the CLI can be accessed using:
 
 ```bash
-codepromptforge py txt --base-dir="./codebase" --output-file="./prompts/merged_prompt.txt"
+codepromptforge <command> [OPTIONS]
 ```
 
-This looks for `.py` and `.txt` files in `./codebase`, then writes them into `./prompts/merged_prompt.txt`.
+#### Example:
+```bash
+codepromptforge combine --extensions py txt --output-file merged_prompt.txt
+```
+This merges all `.py` and `.txt` files into `merged_prompt.txt`.
 
-### Python API Usage
-
-You can also invoke **codepromptforge**’s functionality programmatically:
+### Python API
+You can use **CodePromptForge** programmatically:
 
 ```python
-from codepromptforge.main import PromptForge
+from codepromptforge.main import CodePromptForge
 
-def combine_files():
-    forge = PromptForge(
-        base_dir="./codebase",
-        output_file="./prompts/merged_prompt.txt",
-        dry_run=False,
-        force=False,
-        include_tree=True
-    )
-    forge.run(["py", "txt"])
-    print("Files have been merged successfully!")
+forge = CodePromptForge(
+    base_dir="./codebase",
+    output_file="./merged_prompt.txt",
+    include_tree=True
+)
 
-if __name__ == "__main__":
-    combine_files()
+forge.run(["py", "txt"])  # Merge .py and .txt files
 ```
-
-When you call `forge.run(["py", "txt"])`, it searches for `.py` and `.txt` files under `./codebase` and merges them into `./prompts/merged_prompt.txt`. If `include_tree=True`, it also prepends a directory tree structure to the beginning of the output file.
 
 ---
 
-## Command Line Arguments
+## Command Reference
 
-| Argument         | Required? | Default                        | Description                                                                                         |
-|------------------|----------|--------------------------------|-----------------------------------------------------------------------------------------------------|
-| `extensions`     | Yes       | None                           | File extensions to search for, without dots. Multiple can be specified (e.g., `py txt md`).         |
-| `--base-dir`     | No        | `./codebase`                   | Base directory to search in.                                                                        |
-| `--output-file`  | No        | `./prompts/merged_prompt.txt`  | File where the merged content is written.                                                           |
-| `--dry-run`      | No        | `False`                        | Lists the files that would be merged without writing to the output file.                            |
-| `--force`        | No        | `False`                        | Overwrites an existing output file without prompting if set.                                        |
-| `--include-tree` | No        | `False`                        | Includes a directory tree listing at the top of your output file when set.                          |
+| Command          | Description |
+|-----------------|-------------|
+| `tree`          | List all files in a directory (excluding ignored ones). |
+| `file`          | Print the contents of a specified file. |
+| `files`         | List files in a folder with their contents. |
+| `files_recursive` | Recursively list files in a directory. |
+| `write`         | Write or overwrite a file with given content. |
+| `combine`       | Merge specified files into a single output file. |
+| `clean_result`  | Remove specified files from the `.result` directory. |
+
+### CLI Options
+
+| Option           | Description |
+|-----------------|-------------|
+| `--folder`      | Path to the directory (for `tree`, `files`, `files_recursive`). |
+| `--file`        | Path to the file (for `file`, `write`). |
+| `--content`     | Content to write to a file (for `write`). |
+| `--base-dir`    | Base directory for operations (default: `.`). |
+| `--extensions`  | List of file extensions to merge (for `combine`). |
+| `--output-file` | Path to save the merged output (for `combine`). |
+| `--force`       | Overwrite existing output file without confirmation. |
+| `--exclude`     | List of files to exclude from merging. |
+| `--exclude-clean` | Files to remove from `.result` folder. |
 
 ---
 
 ## Examples
 
-### Basic Usage
-
+### List Directory Tree
 ```bash
-codepromptforge py
+codepromptforge tree --folder .
 ```
-- Searches `./codebase` (by default) for `.py` files, merging them into `./prompts/merged_prompt.txt`.
 
-### Changing the Base Directory
-
+### Get File Content
 ```bash
-codepromptforge md --base-dir="./docs" --output-file="./prompts/combined_docs.txt"
+codepromptforge file --file script.py
 ```
-- Locates all `.md` files in `./docs`, writing them into `./prompts/combined_docs.txt`.
 
-### Including a Directory Tree
-
+### Merge `.py` and `.md` Files
 ```bash
-codepromptforge py txt --include-tree
+codepromptforge combine --extensions py md --output-file merged_code.txt
 ```
-- Merges `.py` and `.txt` files from `./codebase` into `./prompts/merged_prompt.txt` and prepends a directory tree view at the top of the output.
 
-### Dry Run
+### Python API Usage
+```python
+from codepromptforge.main import CodePromptForge
 
+forge = CodePromptForge(
+    base_dir=".",
+    output_file="merged.txt",
+    include_tree=True
+)
+
+forge.run(["py", "md"])
+```
+
+### Cleaning the `.result` Directory
 ```bash
-codepromptforge py --dry-run
+codepromptforge clean_result --exclude-clean old_output.txt
 ```
-- Lists all `.py` files in `./codebase` without creating or overwriting the output file.
 
 ---
 
@@ -143,32 +148,29 @@ codepromptforge py --dry-run
 
 ```
 codepromptforge/
-├── __init__.py   # Package initializer
-├── cli.py        # Command-line interface
-├── main.py       # Core logic, including PromptForge class
+├── __init__.py        # Package initializer
+├── cli.py             # Command-line interface
+├── main.py            # Core logic
 tests/
-├── test_codepromptforge.py  # Unit tests (requires pytest or similar)
+├── test_cli.py        # CLI tests
+├── test_main.py       # Main logic tests
 ```
-
-- **`__init__.py`**: Makes `codepromptforge` a Python package.  
-- **`cli.py`**: Defines the CLI entry point using Python’s `argparse`.  
-- **`main.py`**: Contains the `PromptForge` class to find and merge files.  
-- **`tests/`**: Holds tests verifying functionality of the package.
 
 ---
 
 ## Contributing
 
-Contributions of any kind are welcome! Submit issues or pull requests to enhance features or fix bugs. Before opening a PR:
+Contributions are welcome! Before submitting a pull request:
 
-1. Adhere to Python’s [PEP 8](https://peps.python.org/pep-0008/) style guidelines.  
-2. Write or update tests to confirm correct behavior.  
-3. Update the documentation (including this README) if your changes affect usage.
+1. Follow Python’s [PEP 8](https://peps.python.org/pep-0008/) guidelines.
+2. Ensure tests pass.
+3. Update documentation if needed.
 
 ---
 
 ## License
 
-This project is distributed under the [MIT License](https://opensource.org/licenses/MIT). You’re free to use, modify, and distribute **codepromptforge** under these terms. If you find it helpful, consider giving a shout-out or contributing back to the repository.
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). Use freely and contribute if you find it helpful!
 
-Enjoy **codepromptforge** and happy coding!
+---
+Enjoy **CodePromptForge** and happy coding! 🚀
