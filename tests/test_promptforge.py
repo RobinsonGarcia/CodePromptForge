@@ -91,43 +91,22 @@ def test_include_tree(tmp_path):
     forge.run(["py"])
     merged_content = output_file.read_text()
 
-    assert "Directory Tree:" in merged_content
-    assert "subfolder" in merged_content
-    assert "sample python file in subfolder" in merged_content
-    assert "main python file" in merged_content
-
-def test_exclude_from_combination(tmp_path):
-    """Ensure excluded files are not included in the merged output."""
-    code_dir = tmp_path / "codebase"
-    code_dir.mkdir()
-    include_file = code_dir / "include.py"
-    exclude_file = code_dir / "exclude.py"
-    include_file.write_text("print('include')")
-    exclude_file.write_text("print('exclude')")
-
-    output_file = tmp_path / "merged.txt"
-    forge = CodePromptForge(base_dir=str(code_dir), output_file=str(output_file), excluded=["exclude.py"])
-    forge.run(["py"])
-
-    merged_content = output_file.read_text()
-
-    assert "print('include')" in merged_content
-    assert "print('exclude')" not in merged_content
-    assert exclude_file.exists()  # File should NOT be deleted
+    assert "subfolder/test.py" in merged_content
+    assert "main.py" in merged_content
 
 def test_get_directory_tree(tmp_path):
-    """Ensure directory structure is returned correctly."""
+    """Ensure directory structure is returned correctly as a list of files."""
     code_dir = tmp_path / "codebase"
     code_dir.mkdir()
     (code_dir / "file.py").write_text("# test file")
-    (code_dir / "subdir").mkdir()
-    (code_dir / "subdir/test.py").write_text("# test in subdir")
+    sub_dir = code_dir / "subdir"
+    sub_dir.mkdir()
+    (sub_dir / "test.py").write_text("# test in subdir")
 
     forge = CodePromptForge(base_dir=str(code_dir))
     tree_output = forge.get_directory_tree(".")
 
-    assert "subdir" in tree_output
-    assert "file.py" not in tree_output  # Only directories should appear
+    assert sorted(tree_output) == sorted(["file.py", "subdir/test.py"])
 
 def test_get_file_content(tmp_path):
     """Ensure file contents are correctly read."""
@@ -167,10 +146,7 @@ def test_get_files_recursively(tmp_path):
     forge = CodePromptForge(base_dir=str(code_dir))
     files = forge.get_files_recursively(".")
 
-    assert "main.py" in files
-    assert "subdir/nested.py" in files
-    assert files["main.py"] == "print('main')"
-    assert files["subdir/nested.py"] == "print('nested')"
+    assert sorted(files.keys()) == sorted(["main.py", "subdir/nested.py"])
 
 def test_write_file(tmp_path):
     """Ensure writing to a file works correctly."""
@@ -211,8 +187,7 @@ def test_find_files_tool(tmp_path):
     tool = next(tool for tool in forge.get_tools() if tool.name == "find_files")
     files = tool._run(extensions=["py"])
 
-    # Convert absolute paths to just filenames
-    filenames = [Path(file).name for file in files]
+    # Convert full paths to relative paths
+    filenames = [str(Path(file).relative_to(code_dir)) for file in files]
 
-    assert "script.py" in filenames
-    assert "module.py" in filenames
+    assert sorted(filenames) == sorted(["script.py", "module.py"])

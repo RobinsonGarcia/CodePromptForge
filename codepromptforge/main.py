@@ -37,11 +37,12 @@ class CodePromptForge:
         self.result_dir = self.base_dir / ".result"
         self.result_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_directory_tree(self, folder_path: str) -> str:
+    def get_directory_tree(self, folder_path: str) -> List[str]:
         target_path = self.base_dir / folder_path
         if not target_path.is_dir():
             raise InvalidBaseDirectoryError(f"Invalid directory: {target_path}")
-        return self._generate_tree(target_path)
+
+        return [str(file.relative_to(self.base_dir)) for file in target_path.rglob("*") if file.is_file()]
 
     def _generate_tree(self, path: Path, prefix: str = "") -> str:
         # Only include directories (exclude files) in the tree output.
@@ -118,8 +119,7 @@ class CodePromptForge:
         with self.output_file.open('w', encoding='utf-8') as outfile:
             if self.include_tree:
                 outfile.write("Directory Tree:\n")
-                outfile.write(self.get_directory_tree("."))
-                outfile.write("\n\n")
+                outfile.write("\n".join(self.get_directory_tree(".")) + "\n")  # ✅ FIXED
             for file in files:
                 outfile.write(f"### {file.name} ###\n")
                 outfile.write(file.read_text(encoding="utf-8"))
@@ -172,10 +172,10 @@ class CodePromptForge:
 
         class GetDirectoryTreeTool(BaseTool):
             name: str = "get_directory_tree"
-            description: str = "Returns a directory tree of the specified folder."
+            description: str = "Returns a list of all files in the specified folder, with paths relative to the base directory."
             args_schema: Type[BaseModel] = GetDirectoryTreeInput
 
-            def _run(self, folder_path: str) -> str:
+            def _run(self, folder_path: str) -> List[str]:
                 return forge.get_directory_tree(folder_path)
 
         class GetFileContentTool(BaseTool):
