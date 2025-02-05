@@ -2,6 +2,9 @@ prompts
 build
 combine.sh
 notebooks
+.github
+.vscode
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
