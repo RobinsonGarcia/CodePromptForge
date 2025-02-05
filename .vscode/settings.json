@@ -1,0 +1,21 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/codepromptforge.egg-info": true,
+        "*.egg-info": true,
+        "codepromptforge.egg-info": true,
+        "**/*.egg-info": true,
+        "**/.pytest_cache": true,
+        ".pytest_cache": true,
+        "codepromptforge/__pycache__": true,
+        "**/__pycache__": true,
+        "codepromptforge/*.*": false,
+        "__pycache__": true
+    },
+    "explorerExclude.backup": {}
+}

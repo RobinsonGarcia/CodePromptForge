@@ -1,196 +1,255 @@
 import os
+import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Dict, Optional, Type
+from pydantic import BaseModel, Field
+from langchain_core.tools import BaseTool
 
 class InvalidBaseDirectoryError(Exception):
-    """Raised when the specified base directory is invalid or does not exist."""
     pass
 
 class NoFilesFoundError(Exception):
-    """Raised when no files are found matching the specified extensions."""
     pass
 
 class OutputFileAlreadyExistsError(Exception):
-    """Raised when the output file already exists and 'force' is not enabled."""
     pass
 
 class CodePromptForge:
-    """
-    A class to consolidate files from a base directory into a single prompt,
-    making it easier to use with large language models (LLMs) for code review,
-    bug fixing, refactoring, and more.
-
-    Attributes:
-        base_dir (Path): The root directory to search for files.
-        output_file (Path): The file where combined content is written.
-        dry_run (bool): If True, just list files without writing output.
-        force (bool): If True, overwrite existing output files without prompting.
-        include_tree (bool): If True, append a directory tree to the combined output.
-        excluded (List[Path]): A list of paths to exclude from the search.
-    """
-
     def __init__(
         self,
         base_dir: str,
-        output_file: str,
+        output_file: str = None,
         dry_run: bool = False,
         force: bool = False,
         include_tree: bool = False,
         excluded: Optional[List[str]] = None
     ):
-        """
-        Initialize a new CodePromptForge instance.
+        self.base_dir = Path(base_dir).resolve()
+        if not self.base_dir.exists() or not self.base_dir.is_dir():
+            raise InvalidBaseDirectoryError(f"Base directory '{self.base_dir}' does not exist or is not a directory.")
 
-        Args:
-            base_dir (str): The directory to search for files.
-            output_file (str): The path of the file to write combined content to.
-            dry_run (bool, optional): If True, just list files. Defaults to False.
-            force (bool, optional): If True, overwrite existing output. Defaults to False.
-            include_tree (bool, optional): If True, include directory tree in output. Defaults to False.
-            excluded (List[str], optional): List of file or directory patterns to exclude. Defaults to None.
-        """
-        self.base_dir = Path(base_dir)
-        self.output_file = Path(output_file)
+        self.output_file = Path(output_file) if output_file else None
         self.dry_run = dry_run
         self.force = force
         self.include_tree = include_tree
-        self.excluded = [self.base_dir / Path(x) for x in (excluded or [])]
-        print(self.excluded)
+        # Note: the 'excluded' list here is only used to remove files from the final combination.
+        self.excluded = [self.base_dir / Path(x) for x in (excluded or [])] if excluded else []
+        self.result_dir = self.base_dir / ".result"
+        self.result_dir.mkdir(parents=True, exist_ok=True)
 
-    def _validate_base_directory(self) -> None:
-        """
-        Validate that the base directory is a directory.
+    def get_directory_tree(self, folder_path: str) -> str:
+        target_path = self.base_dir / folder_path
+        if not target_path.is_dir():
+            raise InvalidBaseDirectoryError(f"Invalid directory: {target_path}")
+        return self._generate_tree(target_path)
 
-        Raises:
-            InvalidBaseDirectoryError: If self.base_dir is not a valid directory.
-        """
-        if not self.base_dir.is_dir():
-            raise InvalidBaseDirectoryError(
-                f"Base directory '{self.base_dir}' does not exist or is not a directory. "
-                "Use --help for more information."
-            )
-
-    def _validate_output_file(self) -> None:
-        """
-        Check if the output file already exists and handle overwrite if 'force' is disabled.
-
-        Raises:
-            OutputFileAlreadyExistsError: If the file exists and self.force is False.
-        """
-        if self.output_file.exists() and not self.force and not self.dry_run:
-            raise OutputFileAlreadyExistsError(
-                f"Output file '{self.output_file}' already exists. Use --force to overwrite. "
-                "For example: codepromptforge py --force"
-            )
-
-    def find_files(self, extensions: List[str]) -> List[Path]:
-        """
-        Locate all files within base_dir that match the given extensions,
-        excluding any that match the specified exclusion patterns.
-
-        Args:
-            extensions (List[str]): The file extensions to search for (without dots).
-
-        Returns:
-            List[Path]: A unique, sorted list of file paths matching the extensions.
-
-        Raises:
-            InvalidBaseDirectoryError: If base_dir is not a valid directory.
-            NoFilesFoundError: If no matching files are found.
-        """
-        self._validate_base_directory()
-
-        # Filter out files that are directly in or under any excluded path
-        def is_excluded(file_path: Path) -> bool:
-            for excluded_path in self.excluded:
-                # If file_path is excluded or a child of an excluded directory
-                if file_path == excluded_path or excluded_path in file_path.parents:
-                    return True
-            return False
-
-        matched_files = []
-        for ext in extensions:
-            for file_path in self.base_dir.rglob(f"*.{ext}"):
-                if not is_excluded(file_path):
-                    matched_files.append(file_path)
-
-        matched_files = sorted(set(matched_files))
-        if not matched_files:
-            raise NoFilesFoundError(
-                f"No files found for extensions {extensions} in '{self.base_dir}' after applying exclusions. "
-                "Try removing --exclude or adjusting your patterns."
-            )
-        return matched_files
-
-    def generate_directory_tree(self, path: Optional[Path] = None, prefix: str = "") -> str:
-        """
-        Recursively generate a text-based tree structure of the directories.
-
-        Args:
-            path (Optional[Path], optional): The starting path for generating the tree.
-                                             Defaults to None, which means self.base_dir.
-            prefix (str, optional): The current prefix for tree branches. Defaults to "".
-
-        Returns:
-            str: A multiline string representing the directory structure.
-        """
-        if path is None:
-            path = self.base_dir
-
+    def _generate_tree(self, path: Path, prefix: str = "") -> str:
+        # Only include directories (exclude files) in the tree output.
         tree_lines = []
-        sub_dirs = sorted([d for d in path.iterdir() if d.is_dir()])
-
+        sub_dirs = sorted([d for d in path.iterdir() if d.is_dir()], key=lambda d: d.name)
         for i, sub_dir in enumerate(sub_dirs):
             connector = "└── " if i == len(sub_dirs) - 1 else "├── "
             tree_lines.append(f"{prefix}{connector}{sub_dir.name}")
-
-            # Recurse into subdirectories
             extension = "    " if i == len(sub_dirs) - 1 else "│   "
-            tree_lines.extend(self.generate_directory_tree(sub_dir, prefix + extension))
-
+            tree_lines.extend(self._generate_tree(sub_dir, prefix + extension))
         return "\n".join(tree_lines)
 
-    def forge_prompt(self, files: List[Path]) -> None:
-        """
-        Combine the contents of the specified files into the output file.
-        May also include the directory tree if specified.
+    def get_file_content(self, file_path: str) -> str:
+        target_file = self.base_dir / file_path
+        if not target_file.is_file():
+            raise FileNotFoundError(f"File not found: {target_file}")
+        return target_file.read_text(encoding="utf-8")
 
-        Args:
-            files (List[Path]): The list of file paths to merge.
-        """
-        if self.dry_run:
-            # Only list the files, do not write anything
-            print("Dry run: The following files would be merged:")
-            for f in files:
-                print(f" - {f}")
-            return
+    def get_files_in_folder(self, folder_path: str) -> Dict[str, str]:
+        target_folder = self.base_dir / folder_path
+        if not target_folder.is_dir():
+            raise InvalidBaseDirectoryError(f"Invalid directory: {target_folder}")
+        return {
+            file.name: file.read_text(encoding="utf-8")
+            for file in target_folder.iterdir() if file.is_file()
+        }
 
-        # Create the parent directory if it doesn't exist
-        self.output_file.parent.mkdir(parents=True, exist_ok=True)
+    def get_files_recursively(self, folder_path: str) -> Dict[str, str]:
+        target_folder = self.base_dir / folder_path
+        if not target_folder.is_dir():
+            raise InvalidBaseDirectoryError(f"Invalid directory: {target_folder}")
+        return {
+            str(file.relative_to(self.base_dir)): file.read_text(encoding="utf-8")
+            for file in target_folder.rglob("*") if file.is_file()
+        }
+    
+    def write_file(self, file_path: str, content: str) -> str:
+        """Writes a file inside .result folder and ensures it exists."""
+        self.result_dir.mkdir(parents=True, exist_ok=True)
+        result_file = self.result_dir / file_path
+        result_file.write_text(content, encoding="utf-8")
+        return f"File written successfully: {result_file}"
 
-        # Validate the output file (handle overwriting if not forced)
+    def find_files(self, extensions: List[str]) -> List[Path]:
+        # Find all files with the given extensions.
+        # Exclusions are applied only to remove files from the final combination.
+        matched_files = [
+            file_path
+            for ext in extensions
+            for file_path in self.base_dir.rglob(f"*.{ext}")
+            if file_path not in [self.base_dir / ex for ex in self.excluded]
+        ]
+        if not matched_files:
+            raise NoFilesFoundError(f"No files found for extensions {extensions} in '{self.base_dir}'.")
+        return sorted(set(matched_files))
+
+    def _validate_output_file(self) -> None:
+        """Ensures output file does not already exist unless force=True."""
+        if self.output_file and self.output_file.exists() and not self.force:
+            raise OutputFileAlreadyExistsError(
+                f"Output file '{self.output_file}' already exists. Use --force to overwrite."
+            )
+
+    def forge_prompt(self, extensions: List[str]) -> None:
         self._validate_output_file()
-
+        files = self.find_files(extensions)
+        if self.dry_run:
+            print("\n".join(str(f) for f in files))
+            return
+        if not files:
+            print("No files found for combination.")
+            return
+        self.output_file.parent.mkdir(parents=True, exist_ok=True)
         with self.output_file.open('w', encoding='utf-8') as outfile:
-            # Optionally include the directory tree
             if self.include_tree:
                 outfile.write("Directory Tree:\n")
-                outfile.write(self.generate_directory_tree())
+                outfile.write(self.get_directory_tree("."))
                 outfile.write("\n\n")
-
-            # Write each file's content
             for file in files:
-                outfile.write(f"### {file} ###\n")
-                with file.open('r', encoding='utf-8') as infile:
-                    outfile.write(infile.read())
+                outfile.write(f"### {file.name} ###\n")
+                outfile.write(file.read_text(encoding="utf-8"))
                 outfile.write("\n")
 
     def run(self, extensions: List[str]) -> None:
-        """
-        Main entry point: find matching files and write them to the output (or perform a dry run).
+        self.forge_prompt(extensions)
 
-        Args:
-            extensions (List[str]): File extensions to include, without dots.
-        """
-        files = self.find_files(extensions)
-        self.forge_prompt(files)
+    def clean_result_folder(self, excluded_files: List[str]) -> None:
+        """Deletes only specified files inside `.result`, ensuring no other files are removed."""
+        self.result_dir.mkdir(parents=True, exist_ok=True)
+        deleted_files = []
+        for file_name in excluded_files:
+            file_path = self.result_dir / file_name
+            if file_path.exists() and file_path.is_file():
+                file_path.unlink()
+                deleted_files.append(file_name)
+        print(f"Cleaned .result folder. Removed files: {deleted_files}")
+
+
+    def get_tools(self) -> List[BaseTool]:
+        """Returns LangChain-compatible tools with access to CodePromptForge methods."""
+
+        class GetDirectoryTreeInput(BaseModel):
+            folder_path: str = Field(..., description="The directory path to generate a tree from.")
+
+        class GetFileContentInput(BaseModel):
+            file_path: str = Field(..., description="Path of the file to read.")
+
+        class WriteFileInput(BaseModel):
+            file_path: str = Field(..., description="Path to save the file.")
+            content: str = Field(..., description="Content to be written in the file.")
+
+        class CleanResultFolderInput(BaseModel):
+            excluded_files: List[str] = Field(..., description="List of filenames to remove inside .result folder.")
+
+        class GetFilesInFolderInput(BaseModel):
+            folder_path: str = Field(..., description="Path of the folder to list files from.")
+
+        class GetFilesRecursivelyInput(BaseModel):
+            folder_path: str = Field(..., description="Path of the folder to recursively list files.")
+
+        class FindFilesInput(BaseModel):
+            extensions: List[str] = Field(..., description="List of file extensions to search for.")
+
+        class ForgePromptInput(BaseModel):
+            extensions: List[str] = Field(..., description="List of file extensions to include in the prompt.")
+
+        forge = self
+
+        class GetDirectoryTreeTool(BaseTool):
+            name: str = "get_directory_tree"
+            description: str = "Returns a directory tree of the specified folder."
+            args_schema: Type[BaseModel] = GetDirectoryTreeInput
+
+            def _run(self, folder_path: str) -> str:
+                return forge.get_directory_tree(folder_path)
+
+        class GetFileContentTool(BaseTool):
+            name: str = "get_file_content"
+            description: str = "Retrieves the content of a specified file."
+            args_schema: Type[BaseModel] = GetFileContentInput
+
+            def _run(self, file_path: str) -> str:
+                return forge.get_file_content(file_path)
+
+        class GetFilesInFolderTool(BaseTool):
+            name: str = "get_files_in_folder"
+            description: str = "Lists all files in the specified folder."
+            args_schema: Type[BaseModel] = GetFilesInFolderInput
+
+            def _run(self, folder_path: str) -> Dict[str, str]:
+                return forge.get_files_in_folder(folder_path)
+
+        class GetFilesRecursivelyTool(BaseTool):
+            name: str = "get_files_recursively"
+            description: str = "Lists all files in a folder and its subfolders."
+            args_schema: Type[BaseModel] = GetFilesRecursivelyInput
+
+            def _run(self, folder_path: str) -> Dict[str, str]:
+                return forge.get_files_recursively(folder_path)
+
+        class FindFilesTool(BaseTool):
+            name: str = "find_files"
+            description: str = "Finds files with the specified extensions in the base directory."
+            args_schema: Type[BaseModel] = FindFilesInput
+
+            def _run(self, extensions: List[str]) -> List[str]:
+                return [str(file) for file in forge.find_files(extensions)]
+
+        class WriteFileTool(BaseTool):
+            name: str = "write_file"
+            description: str = "Writes content to a file inside the .result folder."
+            args_schema: Type[BaseModel] = WriteFileInput
+
+            def _run(self, file_path: str, content: str) -> str:
+                return forge.write_file(file_path, content)
+
+        class CleanResultFolderTool(BaseTool):
+            name: str = "clean_result_folder"
+            description: str = "Deletes specific files inside the .result folder."
+            args_schema: Type[BaseModel] = CleanResultFolderInput
+
+            def _run(self, excluded_files: List[str]) -> None:
+                return forge.clean_result_folder(excluded_files)
+
+        class ForgePromptTool(BaseTool):
+            name: str = "forge_prompt"
+            description: str = "Combines and processes code files into a single prompt."
+            args_schema: Type[BaseModel] = ForgePromptInput
+
+            def _run(self, extensions: List[str]) -> None:
+                return forge.forge_prompt(extensions)
+
+        class RunTool(BaseTool):
+            name: str = "run"
+            description: str = "Runs the forge process on the specified file extensions."
+            args_schema: Type[BaseModel] = ForgePromptInput
+
+            def _run(self, extensions: List[str]) -> None:
+                return forge.run(extensions)
+
+        return [
+            GetDirectoryTreeTool(),
+            GetFileContentTool(),
+            GetFilesInFolderTool(),
+            GetFilesRecursivelyTool(),
+            FindFilesTool(),
+            WriteFileTool(),
+            CleanResultFolderTool(),
+            ForgePromptTool(),
+            RunTool(),
+        ]

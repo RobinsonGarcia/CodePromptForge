@@ -44,7 +44,7 @@
 2. Navigate to the root directory (containing the `setup.py` file) in your terminal.  
 3. **Install the package**:
    ```bash
-   pip install .
+   pip install codepromptforge
    ```
 4. After installation, you can run codepromptforge directly from the command line if you configure your `setup.py` to expose a script (for example, `codepromptforge`). Alternatively, you can import and use the `PromptForge` class in Python scripts.
 
