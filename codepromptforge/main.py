@@ -1,9 +1,9 @@
 import os
-import sys
 from pathlib import Path
 from typing import List, Dict, Optional, Type
 from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
+import pathspec  # ✅ Added for .gitignore handling
 
 class InvalidBaseDirectoryError(Exception):
     pass
@@ -32,53 +32,75 @@ class CodePromptForge:
         self.dry_run = dry_run
         self.force = force
         self.include_tree = include_tree
-        # Note: the 'excluded' list here is only used to remove files from the final combination.
-        self.excluded = [self.base_dir / Path(x) for x in (excluded or [])] if excluded else []
         self.result_dir = self.base_dir / ".result"
         self.result_dir.mkdir(parents=True, exist_ok=True)
 
+        # Load .gitignore patterns
+        self.gitignore_spec = self._load_gitignore()
+
+        # Convert excluded files into a set for quick lookup
+        self.excluded = set(excluded or [])
+
+    def _load_gitignore(self) -> Optional[pathspec.PathSpec]:
+        """Loads `.gitignore` and compiles it into a pathspec matcher."""
+        gitignore_path = self.base_dir / ".gitignore"
+        if not gitignore_path.exists():
+            return None  # No .gitignore found
+
+        with gitignore_path.open("r", encoding="utf-8") as f:
+            gitignore_patterns = f.readlines()
+
+        return pathspec.PathSpec.from_lines("gitwildmatch", gitignore_patterns)
+
+    def _is_ignored(self, file_path: Path) -> bool:
+        """Checks if a file is ignored by .gitignore, explicitly excluded, or in `.git`."""
+        relative_path = str(file_path.relative_to(self.base_dir))
+        return (
+            (self.gitignore_spec and self.gitignore_spec.match_file(relative_path))  # ✅ Checks against .gitignore
+            or (relative_path in self.excluded)  # ✅ Explicit exclusions
+            or (".git/" in relative_path or relative_path.startswith(".git"))  # ✅ Always ignore `.git`
+        )
+
     def get_directory_tree(self, folder_path: str) -> List[str]:
+        """Returns a list of all files in the specified folder, excluding ignored ones."""
         target_path = self.base_dir / folder_path
         if not target_path.is_dir():
             raise InvalidBaseDirectoryError(f"Invalid directory: {target_path}")
 
-        return [str(file.relative_to(self.base_dir)) for file in target_path.rglob("*") if file.is_file()]
-
-    def _generate_tree(self, path: Path, prefix: str = "") -> str:
-        # Only include directories (exclude files) in the tree output.
-        tree_lines = []
-        sub_dirs = sorted([d for d in path.iterdir() if d.is_dir()], key=lambda d: d.name)
-        for i, sub_dir in enumerate(sub_dirs):
-            connector = "└── " if i == len(sub_dirs) - 1 else "├── "
-            tree_lines.append(f"{prefix}{connector}{sub_dir.name}")
-            extension = "    " if i == len(sub_dirs) - 1 else "│   "
-            tree_lines.extend(self._generate_tree(sub_dir, prefix + extension))
-        return "\n".join(tree_lines)
+        return [
+            str(file.relative_to(self.base_dir))
+            for file in target_path.rglob("*")
+            if file.is_file() and not self._is_ignored(file)
+        ]
 
     def get_file_content(self, file_path: str) -> str:
         target_file = self.base_dir / file_path
-        if not target_file.is_file():
-            raise FileNotFoundError(f"File not found: {target_file}")
+        if not target_file.is_file() or self._is_ignored(target_file):
+            raise FileNotFoundError(f"File not found or ignored: {target_file}")
         return target_file.read_text(encoding="utf-8")
 
     def get_files_in_folder(self, folder_path: str) -> Dict[str, str]:
         target_folder = self.base_dir / folder_path
         if not target_folder.is_dir():
             raise InvalidBaseDirectoryError(f"Invalid directory: {target_folder}")
+
         return {
             file.name: file.read_text(encoding="utf-8")
-            for file in target_folder.iterdir() if file.is_file()
+            for file in target_folder.iterdir()
+            if file.is_file() and not self._is_ignored(file)
         }
 
     def get_files_recursively(self, folder_path: str) -> Dict[str, str]:
         target_folder = self.base_dir / folder_path
         if not target_folder.is_dir():
             raise InvalidBaseDirectoryError(f"Invalid directory: {target_folder}")
+
         return {
             str(file.relative_to(self.base_dir)): file.read_text(encoding="utf-8")
-            for file in target_folder.rglob("*") if file.is_file()
+            for file in target_folder.rglob("*")
+            if file.is_file() and not self._is_ignored(file)
         }
-    
+
     def write_file(self, file_path: str, content: str) -> str:
         """Writes a file inside .result folder and ensures it exists."""
         self.result_dir.mkdir(parents=True, exist_ok=True)
@@ -87,13 +109,11 @@ class CodePromptForge:
         return f"File written successfully: {result_file}"
 
     def find_files(self, extensions: List[str]) -> List[Path]:
-        # Find all files with the given extensions.
-        # Exclusions are applied only to remove files from the final combination.
         matched_files = [
             file_path
             for ext in extensions
             for file_path in self.base_dir.rglob(f"*.{ext}")
-            if file_path not in [self.base_dir / ex for ex in self.excluded]
+            if not self._is_ignored(file_path)
         ]
         if not matched_files:
             raise NoFilesFoundError(f"No files found for extensions {extensions} in '{self.base_dir}'.")
@@ -119,7 +139,7 @@ class CodePromptForge:
         with self.output_file.open('w', encoding='utf-8') as outfile:
             if self.include_tree:
                 outfile.write("Directory Tree:\n")
-                outfile.write("\n".join(self.get_directory_tree(".")) + "\n")  # ✅ FIXED
+                outfile.write("\n".join(self.get_directory_tree(".")) + "\n")
             for file in files:
                 outfile.write(f"### {file.name} ###\n")
                 outfile.write(file.read_text(encoding="utf-8"))
@@ -129,7 +149,6 @@ class CodePromptForge:
         self.forge_prompt(extensions)
 
     def clean_result_folder(self, excluded_files: List[str]) -> None:
-        """Deletes only specified files inside `.result`, ensuring no other files are removed."""
         self.result_dir.mkdir(parents=True, exist_ok=True)
         deleted_files = []
         for file_name in excluded_files:
@@ -138,7 +157,6 @@ class CodePromptForge:
                 file_path.unlink()
                 deleted_files.append(file_name)
         print(f"Cleaned .result folder. Removed files: {deleted_files}")
-
 
     def get_tools(self) -> List[BaseTool]:
         """Returns LangChain-compatible tools with access to CodePromptForge methods."""
