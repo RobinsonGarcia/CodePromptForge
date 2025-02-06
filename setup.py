@@ -11,6 +11,8 @@ setup(
         "pydantic",
         "langchain",
         "pathspec",
+        "duckduckgo-search",
+        "langchain-community",
     ],  
 
     extras_require={  
@@ -18,8 +20,6 @@ setup(
             "langchain_ollama",
             "langgraph",
             "ollama",
-            "duckduckgo-search",
-            "langchain-community",
             "flask"
         ],
     },  
