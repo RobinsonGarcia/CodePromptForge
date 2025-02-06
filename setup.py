@@ -2,26 +2,29 @@ from setuptools import setup, find_packages
 
 setup(
     name="codepromptforge",             
-    version="1.0.6",                
-    packages=find_packages(),
-    include_package_data=True,  # ✅ Include non-Python files like templates and static
+    version="1.0.7",                
+
+    # 🔹 Install `core/` but exclude `assistant/` by default
+    packages=find_packages(exclude=["codepromptforge.assistant", "codepromptforge.assistant.*"]),
+
+    # 🔹 Include package data (like templates/static)
+    include_package_data=True,  
 
     install_requires=[
         "pytest",
         "pydantic",
         "langchain",
         "pathspec",
-        "duckduckgo-search",
-        "langchain-community",
-        "langgraph",
-        "langchain_ollama",
-        "ollama",
-        "flask"
-    ],  
+    ],  # ✅ Core dependencies (installed by default)
 
     extras_require={  
-        "assistant": [  
-
+        "assistant": [  # ✅ Optional dependencies for `assistant`
+            "langchain_ollama",
+            "langgraph",
+            "ollama",
+            "duckduckgo-search",
+            "langchain-community",
+            "flask"
         ],
     },  
 

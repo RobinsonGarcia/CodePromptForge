@@ -138,7 +138,7 @@ def main():
         assistant_cli.register_commands(subparsers)
     except ImportError:
         # Assistant module is not installed; ignore extra commands.
-        raise
+        pass
 
     args = parser.parse_args()
     if hasattr(args, "func"):
