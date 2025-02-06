@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="codepromptforge",             
-    version="1.0.4",                
+    version="1.0.5",                
     packages=find_packages(),
     include_package_data=True,  # ✅ Include non-Python files like templates and static
 
