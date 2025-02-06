@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+body {
+    background-color: #121212;
+    color: #33ff33;
+    font-family: "Fira Code", monospace;
+    text-align: center;
+}
+
+.terminal-container {
+    width: 60%;
+    margin: 40px auto;
+    background: #222;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+h2 {
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+}
+
+.chat-box {
+    height: 350px;
+    overflow-y: auto;
+    border: 1px solid #0f0;
+    background: #111;
+    color: #33ff33;
+    padding: 10px;
+    font-size: 14px;
+    text-align: left;
+}
+
+.user-message {
+    color: #0f0;
+    font-weight: bold;
+    margin: 5px;
+}
+
+.assistant-message {
+    color: #aaa;
+    margin: 5px;
+}
+
+input {
+    width: 80%;
+    padding: 10px;
+    background: #222;
+    color: #0f0;
+    border: 1px solid #0f0;
+    border-radius: 5px;
+    font-family: "Fira Code", monospace;
+}
+
+button {
+    padding: 10px 20px;
+    background: #0f0;
+    color: #000;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #33ff33;
+}
+
+/* Code block styling */
+pre {
+    background: #1e1e1e;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+code {
+    font-family: "Fira Code", monospace;
+    color: #ffa500;
+}

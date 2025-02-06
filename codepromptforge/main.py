@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Type
 from pydantic import BaseModel, Field
 from langchain_core.tools import BaseTool
 import pathspec  # ✅ Added for .gitignore handling
-
+from langchain_community.tools import DuckDuckGoSearchRun, DuckDuckGoSearchResults
 class InvalidBaseDirectoryError(Exception):
     pass
 
@@ -270,4 +270,6 @@ class CodePromptForge:
             CleanResultFolderTool(),
             ForgePromptTool(),
             RunTool(),
+            DuckDuckGoSearchRun(), 
+            DuckDuckGoSearchResults(backend="news")
         ]

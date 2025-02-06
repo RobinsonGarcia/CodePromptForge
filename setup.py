@@ -15,6 +15,9 @@ setup(
         "assistant": [  
             "langchain_ollama",  # ✅ Dependencies required for the assistant module
             "langgraph",
+            "ollama",
+            "duckduckgo-search",
+            "langchain-community"
         ],
     },  
 

@@ -26,7 +26,7 @@ class AssistantRegistry:
         cls._registry[name] = builder
 
     @classmethod
-    def get_assistant(cls, name: str, llm):
+    def get_assistant(cls, name: str, llm, base_dir='..'):
         """
         Retrieve and build an assistant by name.
 
@@ -42,7 +42,7 @@ class AssistantRegistry:
         """
         if name not in cls._registry:
             raise KeyError(f"Assistant '{name}' is not registered.")
-        return cls._registry[name](llm)
+        return cls._registry[name](llm, base_dir)
 
     @classmethod
     def list_assistants(cls):

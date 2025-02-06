@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodePromptForge Terminal</title>
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='terminal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='highlight.css') }}">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js"></script>
+    <script>
+        async function sendMessage() {
+            let userMessage = document.getElementById("user-input").value;
+            if (!userMessage.trim()) return;
+
+            // Append user message
+            let chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `<div class='user-message'>➜ ${userMessage}</div>`;
+
+            // Clear input
+            document.getElementById("user-input").value = "";
+
+            // Send request to Flask server
+            let response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            let data = await response.json();
+
+            // Append assistant response
+            chatBox.innerHTML += `<div class='assistant-message'>${data.message}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Apply syntax highlighting
+            hljs.highlightAll();
+        }
+    </script>
+</head>
+<body>
+    <div class="terminal-container">
+        <h2>CodePromptForge Assistant</h2>
+        <div id="chat-box" class="chat-box"></div>
+        <input type="text" id="user-input" placeholder="Type a command..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()">Run</button>
+    </div>
+</body>
+</html>
