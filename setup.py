@@ -13,12 +13,12 @@ setup(
         "pathspec",
         "duckduckgo-search",
         "langchain-community",
+        "langgraph"
     ],  
 
     extras_require={  
         "assistant": [  
             "langchain_ollama",
-            "langgraph",
             "ollama",
             "flask"
         ],
