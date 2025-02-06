@@ -13,7 +13,7 @@ class ModelNotFoundError(Exception):
     pass
 
 def check_if_model_exists(model_name):
-    available_models = [m["name"] for m in ollama.list()["models"]]
+    available_models = [m["model"] for m in ollama.list()["models"]]
     if model_name in available_models:
         return True
     else:
@@ -60,9 +60,11 @@ def start_assistant(model_name, base_dir, temperature, num_ctx):
         except Exception as e:
             print(e, file=sys.stderr)
 
+import subprocess
+
 def start_server(model_name, base_dir):
     print(f"🚀 Starting web server with model '{model_name}' and base directory '{base_dir}'...")
-    subprocess.run(["python", "codepromptforge/assistant/web_assistant/app.py", "--model", model_name, "--base-dir", base_dir])
+    subprocess.run(["python", "-m", "codepromptforge.assistant.web_assistant.app", "--model", model_name, "--base-dir", base_dir])
 
 ###############################
 # Assistant Commands Registration

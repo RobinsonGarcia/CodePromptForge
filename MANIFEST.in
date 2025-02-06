@@ -1,0 +1,5 @@
+include README.md
+include codepromptforge/assistant/web_assistant/templates/*
+include codepromptforge/assistant/web_assistant/static/*
+recursive-include codepromptforge/assistant/web_assistant/templates *
+recursive-include codepromptforge/assistant/web_assistant/static *

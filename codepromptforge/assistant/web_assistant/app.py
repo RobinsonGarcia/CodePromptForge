@@ -7,7 +7,17 @@ import argparse
 import uuid
 import os
 
-app = Flask(__name__)
+APP_DIR = os.path.dirname(os.path.abspath(__file__)) 
+TEMPLATES_PATH = os.path.join(APP_DIR, "templates")
+STATIC_PATH = os.path.join(APP_DIR, "static")
+
+print("🔥 Debug Info 🔥")
+print(f"📂 Current Working Directory: {os.getcwd()}")
+print(f"📁 Expected Templates Path: {TEMPLATES_PATH}")
+print(f"📄 index.html Exists: {os.path.exists(os.path.join(TEMPLATES_PATH, 'index.html'))}")
+
+# Initialize Flask with explicit template directory
+app = Flask(__name__, template_folder=TEMPLATES_PATH, static_folder=STATIC_PATH)
 app.secret_key = "supersecretkey"  # Required for session tracking
 
 def get_available_models():

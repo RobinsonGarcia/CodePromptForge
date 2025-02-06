@@ -4,20 +4,23 @@ setup(
     name="codepromptforge",             
     version="0.0.3",                
     packages=find_packages(),
+    include_package_data=True,  # ✅ Include non-Python files like templates and static
+
     install_requires=[
         "pytest",
         "pydantic",
         "langchain",
         "pathspec",
-    ],  # ✅ Core dependencies
+    ],  
 
     extras_require={  
         "assistant": [  
-            "langchain_ollama",  # ✅ Dependencies required for the assistant module
+            "langchain_ollama",
             "langgraph",
             "ollama",
             "duckduckgo-search",
-            "langchain-community"
+            "langchain-community",
+            "flask"
         ],
     },  
 
@@ -37,5 +40,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.7",  # Specify Python version requirement if needed
+    python_requires=">=3.7",
 )
