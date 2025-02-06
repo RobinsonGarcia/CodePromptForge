@@ -1,6 +1,6 @@
 
-from codepromptforge.main import CodePromptForge
-from codepromptforge.prompt import react_template
+from ...core.main import CodePromptForge
+from ...core.prompt import react_template
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 

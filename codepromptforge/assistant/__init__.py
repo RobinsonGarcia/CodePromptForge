@@ -1,4 +1,4 @@
-from .assistant_registry import AssistantRegistry
-from . import react_assistant  # Ensure assistants are loaded
+from .common.assistant_registry import AssistantRegistry
+from . import cli
 
-__all__ = ["AssistantRegistry"]
+__all__ = [AssistantRegistry, cli]

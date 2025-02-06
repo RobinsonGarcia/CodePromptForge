@@ -23,7 +23,7 @@ setup(
 
     entry_points={
         "console_scripts": [
-            "codepromptforge=codepromptforge.cli:main"
+            "codepromptforge=codepromptforge.core.cli:main"
         ],
     },
     description="A tool to combine code files into a single prompt",
