@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="codepromptforge",
-    version="1.1.0",
+    version="0.0.5",
 
     # ✅ Explicitly define packages; assistant is excluded by default
     packages=["codepromptforge", "codepromptforge.core"],  
