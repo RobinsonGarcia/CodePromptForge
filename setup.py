@@ -1,37 +1,30 @@
 from setuptools import setup, find_packages
 
-# 🔹 Get the list of all packages except `assistant`
-default_packages = find_packages(exclude=["codepromptforge.assistant", "codepromptforge.assistant.*"])
-
-# 🔹 Include `assistant` only when `[assistant]` extra is used
-all_packages = find_packages()
-
 setup(
     name="codepromptforge",
-    version="1.0.8",
+    version="1.1.0",
 
-    # ✅ Only install `core/` by default; include `assistant/` with extras
-    packages=default_packages,  # Default install excludes `assistant/`
+    # ✅ Explicitly define packages; assistant is excluded by default
+    packages=["codepromptforge", "codepromptforge.core"],  
 
-    include_package_data=True,  # Ensure non-code files like templates/static are included
+    include_package_data=True,
 
     install_requires=[
         "pytest",
         "pydantic",
         "langchain",
         "pathspec",
-    ],  # ✅ Core dependencies (installed by default)
+        "langchain_community",  # ✅ Moved to core dependencies
+    ],  # ✅ Core dependencies
 
     extras_require={
-        "assistant": [  # ✅ Optional dependencies for `assistant`
+        "assistant": [  # ✅ Installs assistant when `[assistant]` is used
             "langchain_ollama",
             "langgraph",
             "ollama",
             "duckduckgo-search",
-            "langchain-community",
             "flask"
         ],
-        "full": all_packages  # ✅ Allows installing everything using `[full]`
     },
 
     entry_points={
