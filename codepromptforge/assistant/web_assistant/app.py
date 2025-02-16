@@ -12,7 +12,7 @@ TEMPLATES_PATH = os.path.join(APP_DIR, "templates")
 STATIC_PATH = os.path.join(APP_DIR, "static")
 
 print("🔥 Debug Info 🔥")
-print(f"📂 Current Working Directory: {os.getcwd()}")
+print(f"📂 Current Working Directory: {APP_DIR }")
 print(f"📁 Expected Templates Path: {TEMPLATES_PATH}")
 print(f"📄 index.html Exists: {os.path.exists(os.path.join(TEMPLATES_PATH, 'index.html'))}")
 

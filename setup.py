@@ -1,11 +1,15 @@
 from setuptools import setup, find_packages
 
+# ✅ Find all sub-packages, including `assistant`
+core_packages = find_packages(include=["codepromptforge", "codepromptforge.core"])
+assistant_packages = find_packages(include=["codepromptforge.assistant", "codepromptforge.assistant.*"])
+
 setup(
     name="codepromptforge",
-    version="0.0.5",
+    version="0.0.7",  # Increment the version
 
-    # ✅ Explicitly define packages; assistant is excluded by default
-    packages=["codepromptforge", "codepromptforge.core"],  
+    # ✅ Only install core by default
+    packages=core_packages,  
 
     include_package_data=True,
 
@@ -14,22 +18,25 @@ setup(
         "pydantic",
         "langchain",
         "pathspec",
-        "langchain_community",  # ✅ Moved to core dependencies
-    ],  # ✅ Core dependencies
+        "langchain_community",
+    ],
 
     extras_require={
-        "assistant": [  # ✅ Installs assistant when `[assistant]` is used
+        # ✅ When installing `[assistant]`, include both dependencies & assistant package
+        "assistant": [
             "langchain_ollama",
             "langgraph",
             "ollama",
             "duckduckgo-search",
             "flask"
-        ],
+        ] + assistant_packages  # <-- Ensure assistant submodules are included
     },
 
     entry_points={
         "console_scripts": [
-            "codepromptforge=codepromptforge.core.cli:main"
+            "codepromptforge=codepromptforge.core.cli:main",
+            "cli_assistant=codepromptforge.assistant.cli_assistant:main",  # ✅ CLI Assistant
+            "web_assistant=codepromptforge.assistant.web_assistant:main",  # ✅ Web Assistant
         ],
     },
 
